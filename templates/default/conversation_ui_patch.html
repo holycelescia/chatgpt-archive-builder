@@ -1,0 +1,149 @@
+<!-- ARCHIVER-CONVERSATION-UI-START -->
+<style>
+/* ChatGPT Archive Builder - Default Conversation UI */
+
+:root {
+    --archive-user-bubble: rgba(171, 104, 255, 0.12);
+    --archive-user-bubble-border: rgba(171, 104, 255, 0.22);
+    --archive-message-border: rgba(255, 255, 255, 0.08);
+}
+
+/* Bigger, more readable base */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-size: 16px;
+}
+
+/* Wider conversation area */
+.conversation {
+    margin: 0 auto;
+    padding: 1rem;
+    max-width: 1200px;
+}
+
+[data-width="narrow"] .conversation {
+    max-width: 680px;
+}
+
+[data-width="wide"] .conversation {
+    max-width: 90%;
+}
+
+@media (min-width: 768px) {
+    .conversation {
+        max-width: 1200px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .conversation {
+        max-width: 1200px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .conversation {
+        max-width: 1200px;
+    }
+}
+
+/* More breathing room between messages */
+.conversation-item {
+    display: flex;
+    position: relative;
+    padding: 1.5rem;
+    border-left: 1px solid rgba(0, 0, 0, .1);
+    border-right: 1px solid rgba(0, 0, 0, .1);
+    border-bottom: 1px solid rgba(0, 0, 0, .1);
+}
+
+.conversation-item:first-of-type {
+    border-top: 1px solid rgba(0, 0, 0, .1);
+}
+
+/* Bigger rounded default avatars */
+.author {
+    display: flex;
+    flex: 0 0 50px;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 1rem;
+    overflow: hidden;
+}
+
+/* Keep default ChatGPT SVG, just make it fit the larger avatar */
+.author svg {
+    color: #fff;
+    width: 50px;
+    height: 50px;
+}
+
+/* Keep ChatGPT Exporter's default user icon.
+   No personal image path here. Future customization can override this later. */
+.author img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Main text readability */
+.conversation-content {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.conversation-content p {
+    white-space: pre-wrap;
+    line-height: 28px;
+}
+
+/* Keep images readable but not absurdly huge */
+.conversation-content img,
+.conversation-content video {
+    display: block;
+    max-width: 300px;
+    height: auto;
+    margin-bottom: 2em;
+    margin-top: 2em;
+}
+
+/* User messages on the right, messenger-style */
+.conversation-item:has(.author.user) {
+    flex-direction: row-reverse;
+}
+
+.conversation-item:has(.author.user) .author {
+    margin-right: 0;
+    margin-left: 1rem;
+}
+
+.conversation-item:has(.author.user) .conversation-content-wrapper {
+    align-items: flex-end;
+}
+
+.conversation-item:has(.author.user) .conversation-content {
+    text-align: left;
+    background-color: var(--archive-user-bubble);
+    border: 1px solid var(--archive-user-bubble-border);
+    border-radius: 12px;
+    padding: 8px 12px;
+    max-width: min(850px, 82%);
+}
+
+.conversation-item:has(.author.user) .conversation-content img {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* Assistant stays on the left but gets sane width */
+.conversation-item:not(:has(.author.user)) .conversation-content {
+    max-width: min(900px, 92%);
+}
+</style>
+<!-- ARCHIVER-CONVERSATION-UI-END -->

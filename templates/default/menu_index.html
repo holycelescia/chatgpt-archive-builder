@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CATEGORY</title>
+
+<style>
+:root {
+  --bg: #15161a;
+  --sidebar: #1b1d23;
+  --content: #262932;
+  --text-dark: #f0f1f6;
+  --text-light: #f3f4f8;
+  --muted-light: #aaadba;
+  --muted-dark: #bcc0cc;
+  --accent: #8a90a8;
+  --link-bg: #343844;
+  --link-hover: #3f4451;
+  --border: #4d5462;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--content);
+  color: var(--text-dark);
+}
+
+.layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+}
+
+.sidebar {
+  background: var(--sidebar);
+  color: var(--text-light);
+  padding: 34px 24px;
+}
+
+.sidebar h1 {
+  margin: 0 0 12px;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.sidebar p {
+  color: var(--muted-light);
+  margin: 0 0 32px;
+  line-height: 1.5;
+}
+
+.back {
+  display: block;
+  margin-bottom: 12px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  color: var(--text-light);
+  background: rgba(255, 255, 255, 0.06);
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.back:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.content {
+  padding: 54px 34px;
+}
+
+.content-inner {
+  max-width: 1180px;
+}
+
+.section-title {
+  margin: 0 0 22px;
+  color: var(--muted-dark);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 18px;
+}
+
+li {
+  margin: 0;
+}
+
+li a {
+  display: block;
+  min-height: 118px;
+  padding: 22px;
+  border-radius: 16px;
+  color: var(--text-dark);
+  background: var(--link-bg);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  transition: 0.18s ease;
+}
+
+li a::before {
+  content: "📁";
+  display: block;
+  margin-bottom: 14px;
+  font-size: 1.8rem;
+}
+
+li a:hover {
+  background: var(--link-hover);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    padding: 28px 22px;
+  }
+
+  .content {
+    padding: 32px 22px;
+  }
+
+  ul {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <h1>CATEGORY</h1>
+    <p>Folder menu.</p>
+
+    <a href="{{HOME_HREF}}" class="back">← Back to homepage</a>
+    <a href="{{BACK_HREF}}" class="back">← Back</a>
+  
+  </aside>
+
+  <main class="content">
+    <div class="content-inner">
+      <p class="section-title">Folders</p>
+
+      <!-- AUTO-GENERATED-LINKS-START -->
+      <ul>
+        <li><a href="TITRE/index.html">TITRE</a></li>
+      </ul>
+      <!-- AUTO-GENERATED-LINKS-END -->
+
+    </div>
+  </main>
+
+</div>
+</body>
+</html>

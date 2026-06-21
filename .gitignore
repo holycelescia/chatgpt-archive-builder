@@ -1,0 +1,34 @@
+# Private user data
+private_input/
+output/
+exports/
+archives/
+*.zip
+*.json
+*.mhtml
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment / secrets
+.env
+*.key
+*.token
+
+# System junk
+.DS_Store
+Thumbs.db
+
+# IDE junk
+.vscode/
+.idea/
+
+# Local settings
+settings/*.json
+!settings/.gitkeep
+
+# Generated local customization
+settings/generated_conversation_ui_patch.html
