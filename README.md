@@ -6,6 +6,9 @@ This project creates a static HTML archive from exported ChatGPT conversations. 
 
 The app is built with Python and CustomTkinter.
 
+It is intended to be used with HTML conversation files exported from ChatGPT Exporter.
+
+
 ## What it does
 
 ChatGPT Archive Builder can:
@@ -68,6 +71,31 @@ Conversations/2026/June 2026/
 4. The app patches the conversation UI and updates the folder index.
 
 The app does not try to guess where conversations belong. Manual placement keeps the archive predictable and avoids wrong auto-sorting.
+
+## Exporting conversations to HTML
+
+ChatGPT Archive Builder expects conversations to already be exported as `.html` files.
+
+The recommended workflow is to use [ChatGPT Exporter](https://github.com/pionxzh/chatgpt-exporter), a userscript that can export ChatGPT conversations in multiple formats, including HTML.
+
+This archive builder was designed around the HTML output format from ChatGPT Exporter. After exporting conversations as HTML files, place them manually into the archive folder where you want them to live, for example:
+
+```text
+Conversations/2026/June 2026/
+```
+
+Then open ChatGPT Archive Builder and run **Update folder** on that month folder.
+
+The app will:
+
+```text
+- apply the custom conversation UI patch
+- update the month index
+- make the conversation searchable from the archive builder
+```
+
+ChatGPT Archive Builder does not export conversations directly from ChatGPT. It organizes, styles, indexes, and searches HTML conversation files that were already exported.
+
 
 ## Customization
 
