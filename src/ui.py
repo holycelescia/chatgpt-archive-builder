@@ -23,7 +23,7 @@ from conversation_style_manager import (
 
 
 APP_NAME = "Archive Builder"
-APP_VERSION = "v0.0.9"
+APP_VERSION = "v0.1.1"
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
