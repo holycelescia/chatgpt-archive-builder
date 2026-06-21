@@ -138,4 +138,4 @@ Current version:
 
 This project is in active development.
 
-Current core features are working, but the project is still being cleaned and improved before public sharing.
+Current core features are working.
