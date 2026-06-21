@@ -55,6 +55,8 @@ The archive itself is static HTML. You can open it directly in a browser.
 
 This tool expects exported ChatGPT conversations as `.html` files.
 
+To export conversations, you can use [chatgpt-exporter](https://github.com/pionxzh/chatgpt-exporter), a browser userscript that can save ChatGPT conversations in formats including HTML.
+
 The intended workflow is:
 
 1. Export or save ChatGPT conversations as HTML files.
@@ -113,6 +115,7 @@ From the project root:
 
 ```bash
 py run.py
+```
 
 ## Running the preflight check
 
