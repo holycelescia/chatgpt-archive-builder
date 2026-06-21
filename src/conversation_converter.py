@@ -19,7 +19,15 @@ def read_text_file(path: Path) -> str:
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
 
-    return path.read_text(encoding="utf-8")
+    raw_data = path.read_bytes()
+
+    for encoding in ("utf-8", "utf-8-sig", "cp1252"):
+        try:
+            return raw_data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+
+    return raw_data.decode("utf-8", errors="replace")
 
 
 def write_text_file(path: Path, content: str) -> None:
