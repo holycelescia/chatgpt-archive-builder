@@ -3,6 +3,7 @@
 from pathlib import Path
 from html import escape
 import re
+from template_renderer import replace_auto_generated_links
 
 from template_renderer import LINKS_START, LINKS_END
 
@@ -154,6 +155,65 @@ def update_conversation_index(folder_path: Path) -> dict[str, object]:
         "added_count": len(added_links),
         "total_links": len(existing_links),
         "added_links": added_links,
+    }
+
+def get_menu_subfolders(folder_path: Path) -> list[Path]:
+    folder_path = Path(folder_path)
+
+    subfolders = []
+
+    for child in folder_path.iterdir():
+        if not child.is_dir():
+            continue
+
+        if not (child / "index.html").exists():
+            continue
+
+        subfolders.append(child)
+
+    return sorted(subfolders, key=lambda path: path.name.lower())
+
+
+def get_menu_display_title(parent_folder: Path, child_folder: Path) -> str:
+    title = child_folder.name
+    parent_name = parent_folder.name
+
+    if parent_name.isdigit() and title.endswith(f" {parent_name}"):
+        return title.removesuffix(f" {parent_name}")
+
+    return title
+
+
+def update_menu_index(folder_path: Path) -> dict:
+    folder_path = Path(folder_path)
+    index_path = folder_path / "index.html"
+
+    if not folder_path.exists():
+        raise FileNotFoundError(f"Folder not found: {folder_path}")
+
+    if not index_path.exists():
+        raise FileNotFoundError(f"Index file not found: {index_path}")
+
+    subfolders = get_menu_subfolders(folder_path)
+
+    folder_links = [
+        {
+            "title": get_menu_display_title(folder_path, subfolder),
+            "href": f"{subfolder.name}/index.html",
+        }
+        for subfolder in subfolders
+    ]
+
+    html = index_path.read_text(encoding="utf-8", errors="ignore")
+    updated_html = replace_auto_generated_links(html, folder_links)
+
+    index_path.write_text(updated_html, encoding="utf-8")
+
+    return {
+        "folder_path": folder_path,
+        "index_path": index_path,
+        "total_folders": len(folder_links),
+        "folder_links": folder_links,
     }
 
 def add_folder_link_to_index(index_path: Path, folder_title: str, folder_href: str) -> dict[str, object]:

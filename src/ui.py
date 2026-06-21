@@ -10,7 +10,7 @@ from settings_manager import (
     get_conversation_ui_settings,
 )
 from conversation_converter import apply_ui_patch_to_folder
-from updater import update_conversation_index
+from updater import update_conversation_index, update_menu_index
 from search_engine import search_archive
 from folder_manager import build_archive, normalize_folder_names, create_archive_folder, parse_years
 from conversation_style_manager import (
@@ -682,7 +682,7 @@ class ArchiveBuilderUI(ctk.CTk):
 
         title = ctk.CTkLabel(
             form,
-            text="Update a conversation folder",
+            text="Update a folder",
             text_color=COLORS["text"],
             font=ctk.CTkFont(size=17, weight="bold"),
         )
@@ -690,7 +690,7 @@ class ArchiveBuilderUI(ctk.CTk):
 
         subtitle = ctk.CTkLabel(
             form,
-            text="Choose a folder containing exported ChatGPT .html conversations. The app will apply the archive UI patch and update the folder index.",
+            text="Choose a conversation folder to patch exported chats, or a menu folder to rebuild its folder links.",
             text_color=COLORS["text_soft"],
             font=ctk.CTkFont(size=13),
             wraplength=620,
@@ -700,7 +700,7 @@ class ArchiveBuilderUI(ctk.CTk):
 
         folder_label = ctk.CTkLabel(
             form,
-            text="Conversation folder",
+            text="Folder to update",
             text_color=COLORS["text"],
             font=ctk.CTkFont(size=13, weight="bold"),
         )
@@ -1040,21 +1040,29 @@ class ArchiveBuilderUI(ctk.CTk):
         folder_path = Path(raw_path)
         index_path = folder_path / "index.html"
 
+        is_menu_folder = False
+
         if index_path.exists():
             index_html = index_path.read_text(encoding="utf-8", errors="ignore")
-
-            if "Folder menu." in index_html or ">FOLDERS<" in index_html:
-                messagebox.showerror(
-                    "Wrong folder type",
-                    "This looks like a menu folder, not a conversation folder.\n\n"
-                    "Choose a folder that contains exported conversation .html files, "
-                    "like:\n\n"
-                    "Conversations\\2026\\June 2026"
-                )
-                self.set_status("folder update cancelled: menu folder selected.")
-                return
+            is_menu_folder = "Folder menu." in index_html or ">FOLDERS<" in index_html
 
         try:
+            if is_menu_folder:
+                menu_result = update_menu_index(folder_path)
+
+                messagebox.showinfo(
+                    "Menu folder updated",
+                    f"Menu folder updated successfully.\n\n"
+                    f"Folder: {menu_result['folder_path']}\n"
+                    f"Index file: {menu_result['index_path']}\n"
+                    f"Folders listed: {menu_result['total_folders']}"
+                )
+
+                self.set_status(
+                    f"menu folder updated: {menu_result['total_folders']} folder(s) listed."
+                )
+                return
+
             patch_result = apply_ui_patch_to_folder(folder_path)
             index_result = update_conversation_index(folder_path)
 
