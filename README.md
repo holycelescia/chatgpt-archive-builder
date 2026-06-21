@@ -131,7 +131,7 @@ Warnings about local settings files are normal as long as GitHub Desktop is not 
 Current version:
 
 ```text
-0.0.8
+0.0.9
 ```
 
 ## Project status
