@@ -3,6 +3,8 @@ import customtkinter as ctk
 from datetime import datetime
 from tkinter import filedialog, messagebox, colorchooser
 import webbrowser
+from config import MONTH_TEMPLATE
+from template_renderer import render_month
 from settings_manager import (
     get_archive_root,
     set_archive_root,
@@ -12,7 +14,13 @@ from settings_manager import (
 from conversation_converter import apply_ui_patch_to_folder
 from updater import update_conversation_index, update_menu_index
 from search_engine import search_archive
-from folder_manager import build_archive, normalize_folder_names, create_archive_folder, parse_years
+from folder_manager import (
+    build_archive,
+    normalize_folder_names,
+    create_archive_folder,
+    parse_years,
+    make_relative_href,
+)
 from conversation_style_manager import (
     save_and_generate_conversation_ui_patch,
     reset_conversation_ui_patch,
@@ -23,7 +31,7 @@ from conversation_style_manager import (
 
 
 APP_NAME = "Archive Builder"
-APP_VERSION = "v0.1.1"
+APP_VERSION = "v0.1.2"
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -1038,11 +1046,48 @@ class ArchiveBuilderUI(ctk.CTk):
             self.update_folder_path_var.set(folder)
             self.set_status("conversation folder selected.")
 
+    def get_direct_conversation_files(self, folder_path: Path) -> list[Path]:
+        if not folder_path.exists() or not folder_path.is_dir():
+            return []
+
+        ignored_files = {
+            "index.html",
+            "login.html",
+            "login2.html",
+        }
+
+        return sorted(
+            [
+                file_path
+                for file_path in folder_path.glob("*.html")
+                if file_path.name.lower() not in ignored_files
+            ],
+            key=lambda path: path.name.casefold(),
+        )
+
+
     def detect_folder_type(self, folder_path: Path) -> str:
         index_path = folder_path / "index.html"
 
+        if not folder_path.exists() or not folder_path.is_dir():
+            return "none"
+
+        direct_conversation_files = self.get_direct_conversation_files(folder_path)
+
+        if direct_conversation_files:
+            return "conversation"
+
         if not index_path.exists():
             return "none"
+
+        subfolders_with_index = [
+            child
+            for child in folder_path.iterdir()
+            if child.is_dir() and (child / "index.html").exists()
+        ]
+
+        if subfolders_with_index:
+            return "menu"
 
         index_html = index_path.read_text(encoding="utf-8", errors="ignore")
 
@@ -1050,6 +1095,50 @@ class ArchiveBuilderUI(ctk.CTk):
             return "menu"
 
         return "conversation"
+
+
+    def repair_conversation_index_if_needed(self, folder_path: Path) -> bool:
+        index_path = folder_path / "index.html"
+
+        needs_repair = False
+
+        if not index_path.exists():
+            needs_repair = True
+        else:
+            index_html = index_path.read_text(encoding="utf-8", errors="ignore")
+
+            needs_repair = (
+                "Folder menu." in index_html
+                or ">FOLDERS<" in index_html
+            )
+
+        if not needs_repair:
+            return False
+
+        archive_root = self.saved_archive_root or get_archive_root()
+
+        if archive_root and Path(archive_root).exists():
+            home_href = make_relative_href(folder_path, Path(archive_root) / "index.html")
+        else:
+            home_href = "../index.html"
+
+        parent_index = folder_path.parent / "index.html"
+
+        if parent_index.exists():
+            back_href = make_relative_href(folder_path, parent_index)
+        else:
+            back_href = home_href
+
+        render_month(
+            template_path=MONTH_TEMPLATE,
+            output_path=index_path,
+            month_title=folder_path.name,
+            conversations=[],
+            home_href=home_href,
+            back_href=back_href,
+        )
+
+        return True
 
 
     def update_single_folder_by_type(self, folder_path: Path) -> dict:
@@ -1060,7 +1149,7 @@ class ArchiveBuilderUI(ctk.CTk):
                 "folder_path": folder_path,
                 "folder_type": "none",
                 "updated": False,
-                "summary": "no index.html",
+                "summary": "no index.html or conversation files",
             }
 
         if folder_type == "menu":
@@ -1071,7 +1160,10 @@ class ArchiveBuilderUI(ctk.CTk):
                 "folder_type": "menu",
                 "updated": True,
                 "summary": f"{result['total_folders']} folder(s) listed",
+                "menu_result": result,
             }
+
+        repaired_index = self.repair_conversation_index_if_needed(folder_path)
 
         patch_result = apply_ui_patch_to_folder(folder_path)
         index_result = update_conversation_index(folder_path)
@@ -1084,6 +1176,9 @@ class ArchiveBuilderUI(ctk.CTk):
                 f"{index_result['total_links']} conversation(s), "
                 f"{patch_result['changed_count']} file(s) patched"
             ),
+            "repaired_index": repaired_index,
+            "patch_result": patch_result,
+            "index_result": index_result,
         }
 
 
@@ -1096,14 +1191,17 @@ class ArchiveBuilderUI(ctk.CTk):
             self.set_status("recursive update failed: folder not found.")
             return
 
-        folders_to_update = [
+        all_folders = [root_folder] + [
             folder
             for folder in root_folder.rglob("*")
-            if folder.is_dir() and (folder / "index.html").exists()
+            if folder.is_dir()
         ]
 
-        if (root_folder / "index.html").exists():
-            folders_to_update.append(root_folder)
+        folders_to_update = [
+            folder
+            for folder in all_folders
+            if self.detect_folder_type(folder) != "none"
+        ]
 
         folders_to_update = sorted(
             set(folders_to_update),
@@ -1185,13 +1283,12 @@ class ArchiveBuilderUI(ctk.CTk):
         if not raw_path:
             messagebox.showerror(
                 "Missing folder",
-                "Please choose or enter a conversation folder first."
+                "Please choose or enter a folder first."
             )
             self.set_status("folder update cancelled: no folder selected.")
             return
 
         folder_path = Path(raw_path)
-        index_path = folder_path / "index.html"
 
         recursive_update = (
             hasattr(self, "recursive_update_var")
@@ -1202,31 +1299,8 @@ class ArchiveBuilderUI(ctk.CTk):
             self.update_folder_tree_from_ui(folder_path)
             return
 
-        is_menu_folder = False
-
-        if index_path.exists():
-            index_html = index_path.read_text(encoding="utf-8", errors="ignore")
-            is_menu_folder = "Folder menu." in index_html or ">FOLDERS<" in index_html
-
         try:
-            if is_menu_folder:
-                menu_result = update_menu_index(folder_path)
-
-                messagebox.showinfo(
-                    "Menu folder updated",
-                    f"Menu folder updated successfully.\n\n"
-                    f"Folder: {menu_result['folder_path']}\n"
-                    f"Index file: {menu_result['index_path']}\n"
-                    f"Folders listed: {menu_result['total_folders']}"
-                )
-
-                self.set_status(
-                    f"menu folder updated: {menu_result['total_folders']} folder(s) listed."
-                )
-                return
-
-            patch_result = apply_ui_patch_to_folder(folder_path)
-            index_result = update_conversation_index(folder_path)
+            result = self.update_single_folder_by_type(folder_path)
 
         except Exception as error:
             messagebox.showerror(
@@ -1236,8 +1310,40 @@ class ArchiveBuilderUI(ctk.CTk):
             self.set_status("folder update failed.")
             return
 
+        if not result["updated"]:
+            messagebox.showwarning(
+                "Folder not updated",
+                f"This folder could not be updated.\n\n"
+                f"Folder: {folder_path}\n"
+                f"Reason: {result['summary']}"
+            )
+            self.set_status("folder update skipped.")
+            return
+
+        if result["folder_type"] == "menu":
+            menu_result = result["menu_result"]
+
+            messagebox.showinfo(
+                "Menu folder updated",
+                f"Menu folder updated successfully.\n\n"
+                f"Folder: {menu_result['folder_path']}\n"
+                f"Index file: {menu_result['index_path']}\n"
+                f"Folders listed: {menu_result['total_folders']}"
+            )
+
+            self.set_status(
+                f"menu folder updated: {menu_result['total_folders']} folder(s) listed."
+            )
+            return
+
+        patch_result = result["patch_result"]
+        index_result = result["index_result"]
+
+        repaired_text = "yes" if result["repaired_index"] else "no"
+
         message = (
             f"Folder updated successfully.\n\n"
+            f"Index repaired: {repaired_text}\n\n"
             f"HTML conversation files found: {patch_result['total_files']}\n"
             f"Files updated with UI patch: {patch_result['changed_count']}\n"
             f"Files already up to date: {patch_result['unchanged_count']}\n\n"
