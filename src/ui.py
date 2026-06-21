@@ -23,7 +23,7 @@ from conversation_style_manager import (
 
 
 APP_NAME = "Archive Builder"
-APP_VERSION = "v0.1.0"
+APP_VERSION = "v0.0.9"
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -732,6 +732,19 @@ class ArchiveBuilderUI(ctk.CTk):
         )
         browse_button.grid(row=3, column=1, sticky="e", padx=(0, 18), pady=(0, 14))
 
+        self.recursive_update_var = ctk.BooleanVar(value=False)
+
+        recursive_checkbox = ctk.CTkCheckBox(
+            form,
+            text="Update this folder and all subfolders",
+            variable=self.recursive_update_var,
+            text_color=COLORS["text_soft"],
+            fg_color=COLORS["purple"],
+            hover_color="#3d3489",
+            border_color=COLORS["border_active"],
+        )
+        recursive_checkbox.grid(row=5, column=0, columnspan=2, sticky="w", padx=18, pady=(0, 14))
+
         update_button = ctk.CTkButton(
             form,
             text="↻  Update folder",
@@ -1025,6 +1038,146 @@ class ArchiveBuilderUI(ctk.CTk):
             self.update_folder_path_var.set(folder)
             self.set_status("conversation folder selected.")
 
+    def detect_folder_type(self, folder_path: Path) -> str:
+        index_path = folder_path / "index.html"
+
+        if not index_path.exists():
+            return "none"
+
+        index_html = index_path.read_text(encoding="utf-8", errors="ignore")
+
+        if "Folder menu." in index_html or ">FOLDERS<" in index_html:
+            return "menu"
+
+        return "conversation"
+
+
+    def update_single_folder_by_type(self, folder_path: Path) -> dict:
+        folder_type = self.detect_folder_type(folder_path)
+
+        if folder_type == "none":
+            return {
+                "folder_path": folder_path,
+                "folder_type": "none",
+                "updated": False,
+                "summary": "no index.html",
+            }
+
+        if folder_type == "menu":
+            result = update_menu_index(folder_path)
+
+            return {
+                "folder_path": folder_path,
+                "folder_type": "menu",
+                "updated": True,
+                "summary": f"{result['total_folders']} folder(s) listed",
+            }
+
+        patch_result = apply_ui_patch_to_folder(folder_path)
+        index_result = update_conversation_index(folder_path)
+
+        return {
+            "folder_path": folder_path,
+            "folder_type": "conversation",
+            "updated": True,
+            "summary": (
+                f"{index_result['total_links']} conversation(s), "
+                f"{patch_result['changed_count']} file(s) patched"
+            ),
+        }
+
+
+    def update_folder_tree_from_ui(self, root_folder: Path):
+        if not root_folder.exists():
+            messagebox.showerror(
+                "Folder not found",
+                f"Could not find:\n\n{root_folder}"
+            )
+            self.set_status("recursive update failed: folder not found.")
+            return
+
+        folders_to_update = [
+            folder
+            for folder in root_folder.rglob("*")
+            if folder.is_dir() and (folder / "index.html").exists()
+        ]
+
+        if (root_folder / "index.html").exists():
+            folders_to_update.append(root_folder)
+
+        folders_to_update = sorted(
+            set(folders_to_update),
+            key=lambda path: len(path.parts),
+            reverse=True,
+        )
+
+        if not folders_to_update:
+            messagebox.showwarning(
+                "No indexed folders found",
+                "No folders with index.html were found under the selected folder."
+            )
+            self.set_status("recursive update cancelled: no indexed folders found.")
+            return
+
+        confirm = messagebox.askyesno(
+            "Recursive update",
+            f"This will update {len(folders_to_update)} indexed folder(s).\n\n"
+            f"Selected folder:\n{root_folder}\n\n"
+            "Continue?"
+        )
+
+        if not confirm:
+            self.set_status("recursive update cancelled.")
+            return
+
+        updated_menus = 0
+        updated_conversations = 0
+        skipped = 0
+        errors = []
+
+        for folder_path in folders_to_update:
+            try:
+                result = self.update_single_folder_by_type(folder_path)
+
+                if not result["updated"]:
+                    skipped += 1
+                    continue
+
+                if result["folder_type"] == "menu":
+                    updated_menus += 1
+
+                if result["folder_type"] == "conversation":
+                    updated_conversations += 1
+
+            except Exception as error:
+                errors.append(f"{folder_path}: {error}")
+
+        message = (
+            f"Recursive update complete.\n\n"
+            f"Root folder:\n{root_folder}\n\n"
+            f"Menu folders updated: {updated_menus}\n"
+            f"Conversation folders updated: {updated_conversations}\n"
+            f"Skipped folders: {skipped}\n"
+            f"Errors: {len(errors)}"
+        )
+
+        if errors:
+            preview_errors = "\n".join(errors[:5])
+            message += f"\n\nFirst errors:\n{preview_errors}"
+
+            if len(errors) > 5:
+                message += f"\n\n...and {len(errors) - 5} more."
+
+        messagebox.showinfo(
+            "Recursive update finished",
+            message
+        )
+
+        self.set_status(
+            f"recursive update complete: {updated_menus} menu folder(s), "
+            f"{updated_conversations} conversation folder(s)."
+        )
+
 
     def update_folder_from_ui(self):
         raw_path = self.update_folder_path_var.get().strip().strip('"')
@@ -1039,6 +1192,15 @@ class ArchiveBuilderUI(ctk.CTk):
 
         folder_path = Path(raw_path)
         index_path = folder_path / "index.html"
+
+        recursive_update = (
+            hasattr(self, "recursive_update_var")
+            and self.recursive_update_var.get()
+        )
+
+        if recursive_update:
+            self.update_folder_tree_from_ui(folder_path)
+            return
 
         is_menu_folder = False
 
