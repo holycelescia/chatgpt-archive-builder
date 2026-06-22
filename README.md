@@ -101,20 +101,61 @@ These may contain local paths, personal UI settings, or embedded avatar data.
 
 They are ignored by `.gitignore`.
 
-## Installation
+## Installation on Windows
 
-Clone the repository, then install dependencies:
+The easiest way to install the app is to use the included installer.
 
-```bash
-pip install -r requirements.txt
+If Python is not found, `install.bat` can download and install the official Python Install Manager from python.org, then create the local virtual environment automatically.
+The first installation may take a few minutes, especially while creating the virtual environment and installing dependencies.
+
+From the project folder, double-click:
+
+```text
+install.bat
 ```
 
-## Running the app
+This creates a local `.venv` folder and installs the required dependencies from `requirements.txt`.
 
-From the project root:
+After installation, launch the app by double-clicking:
 
-```bash
+```text
+start.bat
+```
+
+## Manual installation
+
+If you prefer using the terminal, run:
+
+```powershell
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install --upgrade pip
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+Then start the app with:
+
+```powershell
 py run.py
+```
+
+or:
+
+```powershell
+.venv\Scripts\python.exe run.py
+```
+
+## Running the preflight check
+
+Before committing or sharing the project, run:
+
+```powershell
+py tools/preflight_check.py
+```
+
+The preflight check verifies that required files exist, Python files compile, version numbers match, and private files are ignored.
+
+Warnings about local settings files are normal as long as GitHub Desktop is not tracking those files.
+
 ```
 
 ## Running the preflight check
@@ -134,7 +175,7 @@ Warnings about local settings files are normal as long as GitHub Desktop is not 
 Current version:
 
 ```text
-0.1.4
+0.1.5
 ```
 
 ## Project status
