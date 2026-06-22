@@ -68,8 +68,8 @@ class ArchiveBuilderUI(ctk.CTk):
         super().__init__()
 
         self.title("ChatGPT Archive Builder")
-        self.geometry("920x560")
-        self.minsize(820, 500)
+        self.geometry("980x680")
+        self.minsize(760, 480)
 
         ctk.set_appearance_mode("dark")
 
@@ -1391,14 +1391,15 @@ class ArchiveBuilderUI(ctk.CTk):
         self.topbar_title.grid(row=0, column=0, sticky="w", padx=22)
 
 
-        self.content = ctk.CTkFrame(
+        self.content = ctk.CTkScrollableFrame(
             self.main,
             fg_color=COLORS["window"],
             corner_radius=0,
+            scrollbar_button_color=COLORS["panel_active"],
+            scrollbar_button_hover_color=COLORS["purple"],
         )
         self.content.grid(row=1, column=0, sticky="nsew", padx=20, pady=20)
         self.content.grid_columnconfigure(0, weight=1)
-        self.content.grid_rowconfigure(1, weight=1)
 
         self.status_bar = ctk.CTkFrame(
             self.main,
